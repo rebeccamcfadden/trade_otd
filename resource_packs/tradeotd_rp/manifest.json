@@ -1,0 +1,24 @@
+{
+        "format_version": 2,
+        "header": {
+          "name": "Trade of the Day!",
+          "description": "Trade of the Day! Resource Pack",
+          "uuid": "bb457aa2-0e3e-44bd-a70d-384868c02fe3",
+          "version": [1, 0, 0],
+          "min_engine_version": [1, 16, 0]
+        },
+        "modules": [
+          {
+            "description": "Trade of the Day! Resources",
+            "type": "resources",
+            "uuid": "94c15adc-cd5a-427d-8e6c-ecc5107fcaf0",
+            "version": [1, 0, 0]
+          }
+        ],
+        "dependencies": [
+          {
+            "uuid": "844974c6-74c1-4c85-ba22-6d2784edf801",
+            "version": [1, 0, 0]
+          }
+        ]
+      }

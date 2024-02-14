@@ -1,0 +1,40 @@
+{
+        "format_version": 2,
+        "header": {
+          "name": "Trade of the Day!",
+          "description": "Trade of the Day! Behavior Pack",
+          "uuid": "844974c6-74c1-4c85-ba22-6d2784edf801",
+          "version": [1, 0, 0],
+          "min_engine_version": [1, 16, 0]
+        },
+        "modules": [
+          {
+            "description": "Behavior",
+            "version": [1, 0, 0],
+            "uuid": "4b90456b-ac7e-491d-a3d8-411e02d67a87",
+            "type": "data"
+          },
+          {
+            "description": "Script resources",
+            "language": "javascript",
+            "type": "script",
+            "uuid": "7953f90e-2f92-4a51-9e17-bc1bfa862dba",
+            "version": [0, 0, 1],
+            "entry": "scripts/main.js"
+          }
+        ],
+        "dependencies": [
+          {
+            "uuid": "bb457aa2-0e3e-44bd-a70d-384868c02fe3",
+            "version": [1, 0, 0]
+          },
+          {
+            "module_name": "@minecraft/server",
+            "version": "1.6.0"
+          },
+          {
+            "module_name": "@minecraft/server-ui",
+            "version": "1.1.0"
+          }
+        ]
+      }
