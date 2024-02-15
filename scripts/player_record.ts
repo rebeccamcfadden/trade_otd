@@ -1,11 +1,9 @@
-import { world, Player, ScoreboardObjective, DisplaySlotId } from "@minecraft/server";
+import { world, Player, ScoreboardObjective, DisplaySlotId, TimeOfDay, ScoreboardIdentity } from "@minecraft/server";
 import Utility from "./utilities";
 
 export default class PlayerRecord {
-	player: Player | undefined;
+	player: Player;
 	currentObjectiveItem: string = '';
-	currentObjective: string = '';
-	objectiveRef: ScoreboardObjective | undefined;
 
 	constructor(player: Player) {
 		this.player = player;
@@ -16,23 +14,34 @@ export default class PlayerRecord {
 		return arr.find(p => p.player === player);
 	}
 
-	cleanupObjective() {
-		if (this.objectiveRef !== undefined) {
-			world.scoreboard.removeObjective(this.objectiveRef);
-		}
-		if (world.scoreboard.getObjective(this.currentObjective)) {
-			world.scoreboard.removeObjective(this.currentObjective);
+	removeScore(objective: ScoreboardObjective) {
+		let players = objective.getParticipants();
+		Utility.sendDebugMessage("All participants: ");
+		for (let i = 0; i < players.length; i++) {
+			let player = players[i].displayName;
+			Utility.sendDebugMessage(player);
+			if ((player as string).startsWith(this.player.name)) {
+				objective.removeParticipant(players[i]);
+			}
 		}
 	}
 
-	assignObjective() {
-		this.cleanupObjective();
-		this.currentObjectiveItem = Utility.randomItem();
-		this.currentObjective = this.player?.name as string + this.currentObjectiveItem;
-		this.objectiveRef = world.scoreboard.addObjective(Utility.namespace + this.currentObjective, this.player?.name + ": " + this.currentObjectiveItem);
-		world.scoreboard.setObjectiveAtDisplaySlot(DisplaySlotId.Sidebar, {
-			objective: this.objectiveRef,
-		});
+	addScore(objective: ScoreboardObjective) {
+		// let playerIdentity = this.player?.scoreboardIdentity;
+		// if (playerIdentity === undefined) {
+		// 	console.error('Identity for ' + this.player?.name + ' is undefined');
+		// 	return;
+		// }
+		this.removeScore(objective);
+		objective.addScore(this.player.name + ": " + this.currentObjectiveItem, TimeOfDay.Sunrise - world.getTimeOfDay());
+	}
+
+	updateScore(objective: ScoreboardObjective) {
+		objective.setScore(this.player.name + ": " + this.currentObjectiveItem, TimeOfDay.Sunrise - world.getTimeOfDay());
+	}
+
+	assignObjective(objectiveItem: string | undefined = undefined) {
+		this.currentObjectiveItem = (objectiveItem === undefined) ? Utility.randomItem() : objectiveItem;
 		Utility.sendDebugMessage('Player assigned objective: ' + this.currentObjectiveItem);
 	}
 }

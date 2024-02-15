@@ -14,5 +14,7 @@ function init() {
 	}
 }
 
-world.afterEvents.worldInitialize.subscribe(init);
+init();
+
+// world.afterEvents.worldInitialize.subscribe(init);
 // system.run(mainTick);

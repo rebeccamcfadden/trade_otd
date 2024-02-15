@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@minecraft/server": "^1.10.0-beta",
-    "@minecraft/server-ui": "^1.1.0",
+    "@minecraft/server-ui": "^1.2.0-beta",
     "decode-uri-component": "^0.2.2",
     "gulp-zip": "^5.1.0"
   }
