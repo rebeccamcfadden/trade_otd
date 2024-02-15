@@ -11,8 +11,9 @@ export default class TradeManager {
 
 
 	constructor() {
+		world.scoreboard.clearObjectiveAtDisplaySlot(DisplaySlotId.Sidebar);
 		this.collectPlayersFromExistingRef();
-		if (this.players.length === 0) {
+		if (this.players.length > 0) {
 			this.initGame();
 			this.initPlayers();
 		}
@@ -138,19 +139,22 @@ export default class TradeManager {
 			switch (response) {
 				case 0:
 					// Current item
-					player_record.player.sendMessage("Your current challenge item is: " + player_record.currentObjectiveItem);
-					player_record.player.sendMessage("Collect this item before the end of the day to win a prize!");
+					player_record.player.sendMessage("Your current challenge item is: "
+						+ player_record.currentObjectiveItem
+						+ "\nCollect this item before the end of the day to win a prize!");
 					break;
 				case 1:
 					// Re-roll for new item
 					player_record.assignObjective();
 					player_record.addScore(this.tradeObjectiveRef as ScoreboardObjective);
-					player_record.player.sendMessage("New item: " + player_record.currentObjectiveItem);
+					player_record.player.sendMessage("Your new item is: "
+						+ player_record.currentObjectiveItem
+						+ "\nCollect this item before the end of the day to win a prize!");
 					break;
 				case 2:
 					// List all player items
 					let playerItems = this.tradeObjectiveRef?.getScores();
-					let playerItemsString = playerItems?.map(score => "\t" + score.participant.displayName + "").join("\n");
+					let playerItemsString = playerItems?.map(score => "   " + score.participant.displayName + "").join("\n");
 					world.sendMessage("Player items:\n" + playerItemsString);
 					break;
 				case 3:
