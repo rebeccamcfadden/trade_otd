@@ -1,9 +1,10 @@
-import { world, system, Player, ItemTypes } from "@minecraft/server";
+import { world, system, Player, ItemTypes, TimeOfDay } from "@minecraft/server";
 import PlayerRecord from "./player_record";
 
 export default class Utility {
-	static debug: boolean = true;
+	static debug: boolean = false;
 	static namespace: string = 'tradeotd:';
+	static endOfDay: number = TimeOfDay.Sunrise + TimeOfDay.Day;
 
 	static init() {
 		world.afterEvents.chatSend.subscribe(data => {

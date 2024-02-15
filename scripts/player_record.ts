@@ -27,17 +27,12 @@ export default class PlayerRecord {
 	}
 
 	addScore(objective: ScoreboardObjective) {
-		// let playerIdentity = this.player?.scoreboardIdentity;
-		// if (playerIdentity === undefined) {
-		// 	console.error('Identity for ' + this.player?.name + ' is undefined');
-		// 	return;
-		// }
 		this.removeScore(objective);
-		objective.addScore(this.player.name + ": " + this.currentObjectiveItem, TimeOfDay.Sunrise - world.getTimeOfDay());
+		objective.addScore(this.player.name + ": " + this.currentObjectiveItem, Utility.endOfDay - world.getTimeOfDay());
 	}
 
 	updateScore(objective: ScoreboardObjective) {
-		objective.setScore(this.player.name + ": " + this.currentObjectiveItem, TimeOfDay.Sunrise - world.getTimeOfDay());
+		objective.setScore(this.player.name + ": " + this.currentObjectiveItem, Utility.endOfDay - world.getTimeOfDay());
 	}
 
 	assignObjective(objectiveItem: string | undefined = undefined) {
