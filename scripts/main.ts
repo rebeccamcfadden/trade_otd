@@ -1,11 +1,18 @@
 import { world, system } from "@minecraft/server";
+import TradeManager from "./trade_manager";
+import Utility from "./utilities";
 
-function mainTick() {
-	if (system.currentTick % 100 === 0) {
-		world.sendMessage("Hello starter! Tick: " + system.currentTick);
+function init() {
+	Utility.sendDebugMessage("Starting up...");
+	try {
+		// initialize the addon manager here
+		const tradeManager = new TradeManager();
+		tradeManager.subscribeEvents();
 	}
-
-	system.run(mainTick);
+	catch (e) {
+		console.error(e);
+	}
 }
 
-system.run(mainTick);
+world.afterEvents.worldInitialize.subscribe(init);
+// system.run(mainTick);
