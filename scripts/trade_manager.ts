@@ -49,6 +49,9 @@ export default class TradeManager {
 				let player_objective_item = gamePlayers[i].displayName.split(": ")[1];
 				Utility.sendDebugMessage(" - objective item = " + player_objective_item);
 				player_record.assignObjective(player_objective_item);
+				if (this.tradeObjectiveRef.getScore(gamePlayers[i].displayName) == 0) {
+					player_record.succeeded = true;
+				}
 				this.players.push(player_record);
 			}
 		}
@@ -70,7 +73,7 @@ export default class TradeManager {
 
 	initPlayers() {
 		for (let i = 0; i < this.players.length; i++) {
-			this.players[i].addScore(this.tradeObjectiveRef as ScoreboardObjective);
+			this.players[i].addScore(this.tradeObjectiveRef as ScoreboardObjective, this.players[i].succeeded);
 		}
 	}
 
@@ -148,6 +151,11 @@ export default class TradeManager {
 					break;
 				case 1:
 					// Re-roll for new item
+					if (player_record.succeeded) {
+						player_record.player.sendMessage("You have already completed the challenge for today!\n"
+							+ "Come back tomorrow for a new challenge!");
+						break;
+					}
 					player_record.assignObjective();
 					player_record.addScore(this.tradeObjectiveRef as ScoreboardObjective);
 					player_record.player.sendMessage("Your new item is: "
@@ -182,7 +190,7 @@ export default class TradeManager {
 			this.handleStartGameForm(player, tradeUI);
 		}
 		else {
-			tradeUI.button("Current item: " + player_record.currentObjectiveItem);
+			tradeUI.button(player_record.succeeded ? "You have completed your trade of the day!" : "Current item: " + player_record.currentObjectiveItem);
 			tradeUI.button("Re-roll for new item");
 			tradeUI.button("List all player items");
 			tradeUI.button("Leave game");
@@ -310,6 +318,11 @@ export default class TradeManager {
 						this.updatePlayerSucccess(data.source);
 					});
 					data.cancel = true;
+				}
+				else {
+					system.run(() => {
+						this.playerTableInteract(data.source);
+					});
 				}
 			}
 		});

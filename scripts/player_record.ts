@@ -29,9 +29,10 @@ export default class PlayerRecord {
 		this.succeeded = false;
 	}
 
-	addScore(objective: ScoreboardObjective) {
+	addScore(objective: ScoreboardObjective, prevSucceeded: boolean = false) {
 		this.removeScore(objective);
-		objective.addScore(this.player.name + ": " + this.currentObjectiveItem, Utility.endOfDay - world.getTimeOfDay());
+		objective.addScore(this.player.name + ": " + this.currentObjectiveItem, prevSucceeded ? 0 : Utility.endOfDay - world.getTimeOfDay());
+		this.succeeded = prevSucceeded;
 	}
 
 	updateScore(objective: ScoreboardObjective) {
