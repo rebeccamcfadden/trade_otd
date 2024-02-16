@@ -350,7 +350,7 @@ export default class TradeManager {
 		}
 		let tick = world.getTimeOfDay();
 		this.tradeObjectiveRef.setScore('Time', Utility.endOfDay - tick);
-		world.sendMessage("Updating scores - " + tick.toString());
+		Utility.sendDebugMessage("Updating scores - " + tick.toString());
 		let day = world.getDay();
 		if (tick >= Utility.endOfDay - 1500 && !this.endOfDayRun) {
 			this.endOfDayRun = system.runInterval(this.endOfDay.bind(this), Utility.endOfDay - tick);
