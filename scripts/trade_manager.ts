@@ -73,18 +73,10 @@ export default class TradeManager {
 	}
 
 	updateLeaderboard() {
-		if (this.successObjectiveRef) {
-			let players = this.players;
-			players?.forEach(player_record => {
-				if (player_record.succeeded) {
-					this.successObjectiveRef?.addScore(player_record.player, 1);
-				}
+		if (this.successObjectiveRef && this.successObjectiveRef.getScores().length > 0) {
+			world.scoreboard.setObjectiveAtDisplaySlot(DisplaySlotId.List, {
+				objective: this.successObjectiveRef,
 			});
-			if (this.successObjectiveRef.getScores().length > 0) {
-				world.scoreboard.setObjectiveAtDisplaySlot(DisplaySlotId.List, {
-					objective: this.successObjectiveRef,
-				});
-			}
 		}
 	}
 
@@ -326,6 +318,7 @@ export default class TradeManager {
 			world.sendMessage(player.name
 				+ " has completed the trade objective!\n"
 				+ "Come back tomorrow for a new challenge!");
+			this.successObjectiveRef?.addScore(player.name, 1);
 			this.updateLeaderboard();
 		}
 		else {
