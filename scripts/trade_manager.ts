@@ -245,6 +245,7 @@ export default class TradeManager {
 		tradeUI.button("List players");
 		tradeUI.button("Clean players");
 		tradeUI.button("Toggle Debug");
+		tradeUI.button("Debug re-roll player item");
 
 		tradeUI.show(player).then(r => {
 			// This will stop the code when the player closes the form
@@ -273,14 +274,14 @@ export default class TradeManager {
 					world.sendMessage('Debug mode: ' + Utility.debug);
 					break;
 				case 3:
-					// Clear objectives
-					const objectives = world.scoreboard.getObjectives();
-					objectives.forEach(objective => {
-						if (objective.id.startsWith(Utility.namespace)) {
-							world.scoreboard.removeObjective(objective);
-						}
-					});
-					world.sendMessage('Cleared objectives');
+					// Debug re-roll player items
+					let player_record = this.players.find(p => p.player === player);
+					if (!player_record) break;
+					player_record.assignObjective();
+					player_record.addScore(this.tradeObjectiveRef as ScoreboardObjective);
+					player_record.player.sendMessage("Your new item is: "
+						+ player_record.currentObjectiveItem
+						+ "\nCollect this item before the end of the day to win a prize!");
 					break;
 				default:
 					console.error("Unknown button pressed");
@@ -308,11 +309,6 @@ export default class TradeManager {
 		else {
 			this.showUI(player, player_record);
 		}
-	}
-
-	playerPlaceTable(player: Player) {
-		// Utility.sendDebugMessage('Player placed a trading table');
-		this.showUI(player);
 	}
 
 	updateScores() {
@@ -358,7 +354,7 @@ export default class TradeManager {
 					});
 					data.cancel = true;
 				}
-				else {
+				else if (data.itemStack.type.id !== 'tradeotd:trader_table') {
 					system.run(() => {
 						this.playerTableInteract(data.source);
 					});
@@ -367,7 +363,7 @@ export default class TradeManager {
 		});
 		world.afterEvents.playerPlaceBlock.subscribe(data => {
 			if (data.block?.typeId === 'tradeotd:trader_table') {
-				this.playerPlaceTable(data.player);
+				this.playerTableInteract(data.player);
 			}
 		});
 
