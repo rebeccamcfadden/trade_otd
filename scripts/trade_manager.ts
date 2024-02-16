@@ -10,6 +10,10 @@ export default class TradeManager {
 	successObjectiveRef: ScoreboardObjective | undefined;
 	successObjectiveId: string = 'tradeotd:trade_winners_objective';
 	successObjectiveDisplayName: string = 'Trade of the Day! Winners';
+
+	updateScoreRun: number | undefined = undefined;
+	endOfDayRun: number | undefined = undefined;
+
 	players: PlayerRecord[] = [];
 
 
@@ -93,6 +97,8 @@ export default class TradeManager {
 			objective: this.tradeObjectiveRef,
 		});
 		this.initLeaderboard();
+
+		this.updateScoreRun = system.runInterval(this.updateScores.bind(this), 1000);
 	}
 
 	initPlayers() {
@@ -106,6 +112,14 @@ export default class TradeManager {
 		if (this.tradeObjectiveRef) {
 			world.scoreboard.removeObjective(this.tradeObjectiveRef);
 			this.tradeObjectiveRef = undefined;
+		}
+		if (this.updateScoreRun) {
+			system.clearRun(this.updateScoreRun);
+			this.updateScoreRun = undefined;
+		}
+		if (this.endOfDayRun) {
+			system.clearRun(this.endOfDayRun);
+			this.endOfDayRun = undefined;
 		}
 	}
 
@@ -303,11 +317,32 @@ export default class TradeManager {
 		}
 	}
 
+	endOfDay() {
+		this.players.forEach(player_record => {
+			player_record.removeScore(this.tradeObjectiveRef as ScoreboardObjective);
+			player_record.assignObjective();
+			player_record.addScore(this.tradeObjectiveRef as ScoreboardObjective);
+			player_record.player.sendMessage("Your new item is: "
+				+ player_record.currentObjectiveItem
+				+ "\nCollect this item before the end of the day to win a prize!");
+		});
+		this.updateScores();
+		if (this.endOfDayRun) {
+			system.clearRun(this.endOfDayRun);
+			this.endOfDayRun = undefined;
+		}
+	}
+
 	updateScores() {
-		// Utility.sendDebugMessage('Updating scores');
 		this.players.forEach(player_record => {
 			player_record.updateScore(this.tradeObjectiveRef as ScoreboardObjective);
-		});
+		});		
+		let tick = world.getTimeOfDay();
+		world.sendMessage("Updating scores - " + tick.toString());
+		let day = world.getDay();
+		if (tick >= Utility.endOfDay - 1000 && !this.endOfDayRun) {// || (day > 0 && tick <= 500)) {
+			this.endOfDayRun = system.runInterval(this.endOfDay.bind(this), Utility.endOfDay - tick);
+		}
 	}
 
 	updatePlayerSucccess(player: Player) {
@@ -359,7 +394,5 @@ export default class TradeManager {
 				this.playerTableInteract(data.player);
 			}
 		});
-
-		system.runInterval(this.updateScores.bind(this), 100);
 	}
 }
