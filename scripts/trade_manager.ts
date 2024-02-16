@@ -1,4 +1,4 @@
-import { system, world, Player, ScoreboardObjective, DisplaySlotId, ItemStack } from "@minecraft/server";
+import { system, world, Player, ScoreboardObjective, DisplaySlotId, ItemStack, Vector3, ItemTypes } from "@minecraft/server";
 import { ActionFormData } from "@minecraft/server-ui";
 import Utility from "./utilities";
 import PlayerRecord from "./player_record";
@@ -357,7 +357,17 @@ export default class TradeManager {
 		}
 	}
 
-	updatePlayerSucccess(player: Player) {
+	spawnPrize(player: Player, blockPos : Vector3 | undefined = undefined) {
+		if (!blockPos) blockPos = player.location;
+		player.dimension.spawnEntity('minecraft:fireworks_rocket', blockPos);
+		blockPos.y += 2;
+		for (let i = 0; i < 10; i++) {
+			player.dimension.spawnEntity('minecraft:xp_orb', blockPos);
+		}
+		player.dimension.spawnItem(new ItemStack('minecraft:diamond'), blockPos);
+	}
+
+	updatePlayerSucccess(player: Player, blockPos : Vector3 | undefined = undefined) {
 		Utility.sendDebugMessage('Trade objective - attempt complete');
 		let player_record = PlayerRecord.findPlayer(player as Player, this.players);
 		if (player_record && this.tradeObjectiveRef) {
@@ -366,6 +376,7 @@ export default class TradeManager {
 				+ " has completed the trade objective!\n"
 				+ "Come back tomorrow for a new challenge!");
 			this.successObjectiveRef?.addScore(player.name, 1);
+			this.spawnPrize(player, blockPos);
 			this.updateLeaderboard();
 		}
 		else {
@@ -390,7 +401,8 @@ export default class TradeManager {
 			if (data.block?.typeId === 'tradeotd:trader_table' && data.source && data.itemStack) {
 				if (this.checkPlayerCompletedObjective(data.source, data.itemStack)) {
 					system.run(() => {
-						this.updatePlayerSucccess(data.source);
+						let blockPos = {x:data.block?.x, y:data.block?.y, z:data.block?.z} as Vector3;
+						this.updatePlayerSucccess(data.source, blockPos);
 					});
 					data.cancel = true;
 				}
