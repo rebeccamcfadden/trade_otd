@@ -7,9 +7,9 @@ export default class TradeManager {
 	tradeObjectiveRef: ScoreboardObjective | undefined;
 	tradeObjectiveId: string = 'tradeotd:trade_objective';
 	tradeObjectiveDisplayName: string = 'Trade of the Day!';
-	// successObjectiveRef: ScoreboardObjective | undefined;
-	// successObjectiveId: string = 'tradeotd:trade_winners_objective';
-	// successObjectiveDisplayName: string = 'Trade of the Day! Winners';
+	successObjectiveRef: ScoreboardObjective | undefined;
+	successObjectiveId: string = 'tradeotd:trade_winners_objective';
+	successObjectiveDisplayName: string = 'Trade of the Day! Winners';
 	players: PlayerRecord[] = [];
 
 
@@ -57,6 +57,37 @@ export default class TradeManager {
 		}
 	}
 
+	initLeaderboard() {
+		if (this.successObjectiveRef) {
+			Utility.sendDebugMessage('Success objective already exists');
+		}
+		else {
+			this.successObjectiveRef = world.scoreboard.getObjective(this.successObjectiveId);
+			if (!this.successObjectiveRef) this.successObjectiveRef = world.scoreboard.addObjective(this.successObjectiveId, this.successObjectiveDisplayName);
+		}
+		if (this.successObjectiveRef.getScores().length > 0) {
+			world.scoreboard.setObjectiveAtDisplaySlot(DisplaySlotId.List, {
+				objective: this.successObjectiveRef,
+			});
+		}
+	}
+
+	updateLeaderboard() {
+		if (this.successObjectiveRef) {
+			let players = this.players;
+			players?.forEach(player_record => {
+				if (player_record.succeeded) {
+					this.successObjectiveRef?.addScore(player_record.player, 1);
+				}
+			});
+			if (this.successObjectiveRef.getScores().length > 0) {
+				world.scoreboard.setObjectiveAtDisplaySlot(DisplaySlotId.List, {
+					objective: this.successObjectiveRef,
+				});
+			}
+		}
+	}
+
 	initGame() {
 		Utility.sendDebugMessage('Starting game');
 		if (this.tradeObjectiveRef) {
@@ -69,6 +100,7 @@ export default class TradeManager {
 		world.scoreboard.setObjectiveAtDisplaySlot(DisplaySlotId.Sidebar, {
 			objective: this.tradeObjectiveRef,
 		});
+		this.initLeaderboard();
 	}
 
 	initPlayers() {
@@ -145,6 +177,12 @@ export default class TradeManager {
 			switch (response) {
 				case 0:
 					// Current item
+					if (player_record.succeeded) {
+						player_record.player.sendMessage("You have already completed the challenge for today!\n"
+							+ "Come back tomorrow for a new challenge!");
+						this.updateLeaderboard();
+						break;
+					}
 					player_record.player.sendMessage("Your current challenge item is: "
 						+ player_record.currentObjectiveItem
 						+ "\nCollect this item before the end of the day to win a prize!");
@@ -292,6 +330,7 @@ export default class TradeManager {
 			world.sendMessage(player.name
 				+ " has completed the trade objective!\n"
 				+ "Come back tomorrow for a new challenge!");
+			this.updateLeaderboard();
 		}
 		else {
 			Utility.sendDebugMessage('Player not found - ' + player.name);
