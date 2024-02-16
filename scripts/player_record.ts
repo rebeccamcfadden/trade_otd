@@ -1,9 +1,11 @@
-import { world, Player, ScoreboardObjective, DisplaySlotId, TimeOfDay, ScoreboardIdentity } from "@minecraft/server";
+import { world, Player, ScoreboardObjective, ItemStack } from "@minecraft/server";
 import Utility from "./utilities";
 
 export default class PlayerRecord {
 	player: Player;
 	currentObjectiveItem: string = '';
+	succeeded: boolean = false;
+	markSucceeded: boolean = false;
 
 	constructor(player: Player) {
 		this.player = player;
@@ -24,6 +26,7 @@ export default class PlayerRecord {
 				objective.removeParticipant(players[i]);
 			}
 		}
+		this.succeeded = false;
 	}
 
 	addScore(objective: ScoreboardObjective) {
@@ -32,11 +35,29 @@ export default class PlayerRecord {
 	}
 
 	updateScore(objective: ScoreboardObjective) {
+		if (this.succeeded) return;
 		objective.setScore(this.player.name + ": " + this.currentObjectiveItem, Utility.endOfDay - world.getTimeOfDay());
 	}
 
 	assignObjective(objectiveItem: string | undefined = undefined) {
 		this.currentObjectiveItem = (objectiveItem === undefined) ? Utility.randomItem() : objectiveItem;
+		this.succeeded = false;
 		Utility.sendDebugMessage('Player assigned objective: ' + this.currentObjectiveItem);
+	}
+
+	checkSuccess(itemStack: ItemStack): boolean {
+		if (this.currentObjectiveItem === itemStack.type.id) {
+			this.markSucceeded = true;
+			Utility.sendDebugMessage('Trade objective marked success');
+			return true;
+		}
+		return false;
+	}
+
+	completeObjective(objective: ScoreboardObjective) {
+		this.succeeded = true;
+		this.markSucceeded = false;
+		objective.setScore(this.player.name + ": " + this.currentObjectiveItem, 0);
+		// successObjective.addScore(this.player.name, 1);
 	}
 }

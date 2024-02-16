@@ -49,6 +49,15 @@ export default class Utility {
 		const index = Math.floor(Math.random() * items.length);
 		return items[index].id;
 	}
+
+	static checkInteractCooldown(player: Player): boolean {
+		const last_tick: number = player.getDynamicProperty('tradeotd:last_interact_tick') as number || 0;
+		if (last_tick + 5 > system.currentTick) {
+			return false;
+		}
+		player.setDynamicProperty('tradeotd:last_interact_tick', system.currentTick);
+		return true;
+	}
 }
 
 world.afterEvents.worldInitialize.subscribe(Utility.init);

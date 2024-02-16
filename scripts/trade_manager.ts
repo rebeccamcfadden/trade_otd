@@ -1,4 +1,4 @@
-import { system, world, Player, ScoreboardObjective, DisplaySlotId, WorldAfterEvents, ChatSendAfterEvent } from "@minecraft/server";
+import { system, world, Player, ScoreboardObjective, DisplaySlotId, ItemStack } from "@minecraft/server";
 import { ActionFormData } from "@minecraft/server-ui";
 import Utility from "./utilities";
 import PlayerRecord from "./player_record";
@@ -7,6 +7,9 @@ export default class TradeManager {
 	tradeObjectiveRef: ScoreboardObjective | undefined;
 	tradeObjectiveId: string = 'tradeotd:trade_objective';
 	tradeObjectiveDisplayName: string = 'Trade of the Day!';
+	// successObjectiveRef: ScoreboardObjective | undefined;
+	// successObjectiveId: string = 'tradeotd:trade_winners_objective';
+	// successObjectiveDisplayName: string = 'Trade of the Day! Winners';
 	players: PlayerRecord[] = [];
 
 
@@ -169,8 +172,7 @@ export default class TradeManager {
 		});
 	}
 
-	showUI(player: Player) {
-		let player_record = PlayerRecord.findPlayer(player as Player, this.players);
+	showUI(player: Player, player_record: PlayerRecord | undefined = undefined) {
 		const tradeUI = new ActionFormData()
 			.title("Trade of the Day!")
 			.body("Collect a daily random challenge item to win a prize!");
@@ -242,13 +244,23 @@ export default class TradeManager {
 		});
 	}
 
+	checkPlayerCompletedObjective(player: Player, itemStack: ItemStack) {
+		let player_record = PlayerRecord.findPlayer(player as Player, this.players);
+		Utility.sendDebugMessage('Attempt player completed objective - ' + player.name + ' - ' + itemStack.type.id + ' - ' + player_record?.currentObjectiveItem);
+		if (player_record && !player_record.succeeded && player_record.checkSuccess(itemStack)) {
+			return true;
+		}
+		return false;
+	}
+
 	playerTableInteract(player: Player) {
-		// Utility.sendDebugMessage('Player interacted with a trading table');
+		Utility.sendDebugMessage('Player interacted with a trading table');
+		let player_record = PlayerRecord.findPlayer(player as Player, this.players);
 		if (player.isSneaking) {
 			this.showDebugUI(player);
 		}
 		else {
-			this.showUI(player);
+			this.showUI(player, player_record);
 		}
 	}
 
@@ -264,18 +276,41 @@ export default class TradeManager {
 		});
 	}
 
+	updatePlayerSucccess(player: Player) {
+		Utility.sendDebugMessage('Trade objective - attempt complete');
+		let player_record = PlayerRecord.findPlayer(player as Player, this.players);
+		if (player_record && this.tradeObjectiveRef) {
+			player_record.completeObjective(this.tradeObjectiveRef);
+			world.sendMessage(player.name
+				+ " has completed the trade objective!\n"
+				+ "Come back tomorrow for a new challenge!");
+		}
+		else {
+			Utility.sendDebugMessage('Player not found - ' + player.name);
+		}
+	}
+
 	subscribeEvents() {
 		// subscribe to events here
 		world.afterEvents.playerInteractWithBlock.subscribe(data => {
-			const last_tick: number = data.player?.getDynamicProperty('tradeotd:last_interact_tick') as number || 0;
-			if (last_tick + 5 > system.currentTick) {
-				return;
+			if (!Utility.checkInteractCooldown(data.player)) return;
+			try {
+				if (data.block?.typeId === 'tradeotd:trader_table') {
+					this.playerTableInteract(data.player);
+				}
+			} catch (e) {
+				Utility.sendDebugMessage('Error: ' + e);
 			}
-			// Utility.sendDebugMessage('Player interacted with block - tick = ' + last_tick as string);
-			data.player?.setDynamicProperty('tradeotd:last_interact_tick', system.currentTick);
-
-			if (data.block?.typeId === 'tradeotd:trader_table') {
-				this.playerTableInteract(data.player);
+		});
+		world.beforeEvents.itemUseOn.subscribe(data => {
+			if (!Utility.checkInteractCooldown(data.source)) return;
+			if (data.block?.typeId === 'tradeotd:trader_table' && data.source && data.itemStack) {
+				if (this.checkPlayerCompletedObjective(data.source, data.itemStack)) {
+					system.run(() => {
+						this.updatePlayerSucccess(data.source);
+					});
+					data.cancel = true;
+				}
 			}
 		});
 		world.afterEvents.playerPlaceBlock.subscribe(data => {
