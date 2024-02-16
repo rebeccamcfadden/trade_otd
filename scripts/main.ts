@@ -6,6 +6,7 @@ function init() {
 	Utility.sendDebugMessage("Starting up...");
 	try {
 		// initialize the addon manager here
+		Utility.init();
 		const tradeManager = new TradeManager();
 		tradeManager.subscribeEvents();
 	}

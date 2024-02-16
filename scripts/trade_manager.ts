@@ -50,11 +50,10 @@ export default class TradeManager {
 				this.tradeObjectiveRef.removeParticipant(gamePlayers[i]);
 			}
 			else {
-				let player_record = new PlayerRecord(player as Player);
 				let player_objective_item = gamePlayers[i].displayName.split(": ")[1];
+				let player_record = new PlayerRecord(player as Player, player_objective_item);
 				Utility.sendDebugMessage(" - objective item = " + player_objective_item);
-				player_record.assignObjective(player_objective_item);
-				if (this.tradeObjectiveRef.getScore(gamePlayers[i].displayName) == 0) {
+				if (this.tradeObjectiveRef.getScore(gamePlayers[i].displayName) === 1) {
 					player_record.succeeded = true;
 				}
 				this.players.push(player_record);
@@ -82,6 +81,15 @@ export default class TradeManager {
 			world.scoreboard.setObjectiveAtDisplaySlot(DisplaySlotId.List, {
 				objective: this.successObjectiveRef,
 			});
+		}
+	}
+
+	cleanupLeaderboard() {
+		if (this.successObjectiveRef) {
+			this.successObjectiveRef.getParticipants().forEach(participant => {
+				this.successObjectiveRef?.removeParticipant(participant);
+			});
+			world.sendMessage('Removed participants from leaderboard - ' + this.successObjectiveRef.getParticipants().length.toString());
 		}
 	}
 
@@ -114,6 +122,10 @@ export default class TradeManager {
 		if (this.tradeObjectiveRef) {
 			world.scoreboard.removeObjective(this.tradeObjectiveRef);
 			this.tradeObjectiveRef = undefined;
+		}
+		if (this.successObjectiveRef) {
+			world.scoreboard.removeObjective(this.successObjectiveRef);
+			this.successObjectiveRef = undefined;
 		}
 		if (this.updateScoreRun) {
 			system.clearRun(this.updateScoreRun);
@@ -214,7 +226,7 @@ export default class TradeManager {
 					let playerItemsString = playerItems?.map((score) => {
 						if (score.participant.displayName === "Time") {
 							return "";
-						} 
+						}
 						return "   " + score.participant.displayName + "";
 					}).filter(str => str && str != "").join("\n");
 					world.sendMessage("Player items:\n" + playerItemsString);
@@ -257,6 +269,7 @@ export default class TradeManager {
 
 		tradeUI.button("List players");
 		tradeUI.button("Clean players");
+		tradeUI.button("Clean leaderboard");
 		tradeUI.button("Toggle Debug");
 		tradeUI.button("Debug re-roll player item");
 
@@ -282,11 +295,15 @@ export default class TradeManager {
 					world.sendMessage('Cleared players');
 					break;
 				case 2:
+					// Clean leaderboard
+					this.cleanupLeaderboard();
+					break;
+				case 3:
 					// Toggle debug
 					Utility.debug = !Utility.debug;
 					world.sendMessage('Debug mode: ' + Utility.debug);
 					break;
-				case 3:
+				case 4:
 					// Debug re-roll player items
 					let player_record = this.players.find(p => p.player === player);
 					if (!player_record) break;
@@ -357,7 +374,7 @@ export default class TradeManager {
 		}
 	}
 
-	spawnPrize(player: Player, blockPos : Vector3 | undefined = undefined) {
+	spawnPrize(player: Player, blockPos: Vector3 | undefined = undefined) {
 		if (!blockPos) blockPos = player.location;
 		player.dimension.spawnEntity('minecraft:fireworks_rocket', blockPos);
 		blockPos.y += 2;
@@ -367,7 +384,7 @@ export default class TradeManager {
 		player.dimension.spawnItem(new ItemStack('minecraft:diamond'), blockPos);
 	}
 
-	updatePlayerSucccess(player: Player, blockPos : Vector3 | undefined = undefined) {
+	updatePlayerSucccess(player: Player, blockPos: Vector3 | undefined = undefined) {
 		Utility.sendDebugMessage('Trade objective - attempt complete');
 		let player_record = PlayerRecord.findPlayer(player as Player, this.players);
 		if (player_record && this.tradeObjectiveRef) {
@@ -375,7 +392,19 @@ export default class TradeManager {
 			world.sendMessage(player.name
 				+ " has completed the trade objective!\n"
 				+ "Come back tomorrow for a new challenge!");
-			this.successObjectiveRef?.addScore(player.name, 1);
+			if (this.successObjectiveRef) {
+				let score = this.successObjectiveRef.hasParticipant(player) && player.scoreboardIdentity ? this.successObjectiveRef.getScore(player.scoreboardIdentity) : undefined;
+				if (score && player.scoreboardIdentity) {
+					this.successObjectiveRef.setScore(player.scoreboardIdentity, score + 1);
+				}
+				else if (player.scoreboardIdentity) {
+					this.successObjectiveRef.addScore(player.scoreboardIdentity, 1);
+				}
+				else {
+					this.successObjectiveRef.addScore(player.name, 1);
+					Utility.sendDebugMessage('Player not found in scoreboard - ' + player.name);
+				}
+			}
 			this.spawnPrize(player, blockPos);
 			this.updateLeaderboard();
 		}
@@ -401,7 +430,7 @@ export default class TradeManager {
 			if (data.block?.typeId === 'tradeotd:trader_table' && data.source && data.itemStack) {
 				if (this.checkPlayerCompletedObjective(data.source, data.itemStack)) {
 					system.run(() => {
-						let blockPos = {x:data.block?.x, y:data.block?.y, z:data.block?.z} as Vector3;
+						let blockPos = { x: data.block?.x, y: data.block?.y, z: data.block?.z } as Vector3;
 						this.updatePlayerSucccess(data.source, blockPos);
 					});
 					data.cancel = true;
