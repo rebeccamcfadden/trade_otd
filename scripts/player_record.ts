@@ -31,19 +31,19 @@ export default class PlayerRecord {
 
 	addScore(objective: ScoreboardObjective, prevSucceeded: boolean = false) {
 		this.removeScore(objective);
-		objective.addScore(this.player.name + ": " + this.currentObjectiveItem, prevSucceeded ? 0 : Utility.endOfDay - world.getTimeOfDay());
+		objective.setScore(this.player.name + ": " + Utility.removeNamespace(this.currentObjectiveItem), prevSucceeded ? 1 : 0);
 		this.succeeded = prevSucceeded;
 	}
 
-	updateScore(objective: ScoreboardObjective) {
-		if (this.succeeded) return;
-		objective.setScore(this.player.name + ": " + this.currentObjectiveItem, Utility.endOfDay - world.getTimeOfDay());
-	}
+	// updateScore(objective: ScoreboardObjective) {
+	// 	if (this.succeeded) return;
+	// 	objective.setScore(this.player.name + ": " + this.currentObjectiveItem, Utility.endOfDay - world.getTimeOfDay());
+	// }
 
 	assignObjective(objectiveItem: string | undefined = undefined) {
 		this.currentObjectiveItem = (objectiveItem === undefined) ? Utility.randomItem() : objectiveItem;
 		this.succeeded = false;
-		Utility.sendDebugMessage('Player assigned objective: ' + this.currentObjectiveItem);
+		Utility.sendDebugMessage('Player assigned objective: ' + Utility.removeNamespace(this.currentObjectiveItem));
 	}
 
 	checkSuccess(itemStack: ItemStack): boolean {
@@ -58,7 +58,7 @@ export default class PlayerRecord {
 	completeObjective(objective: ScoreboardObjective) {
 		this.succeeded = true;
 		this.markSucceeded = false;
-		objective.setScore(this.player.name + ": " + this.currentObjectiveItem, 0);
+		objective.setScore(this.player.name + ": " + Utility.removeNamespace(this.currentObjectiveItem), 1);
 		// successObjective.addScore(this.player.name, 1);
 	}
 }

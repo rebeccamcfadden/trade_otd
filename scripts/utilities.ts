@@ -44,6 +44,10 @@ export default class Utility {
 		}
 	}
 
+	static removeNamespace(id: string): string {
+		return id.split(":")[1];
+	}
+
 	static randomItem() {
 		const items = ItemTypes.getAll();
 		const index = Math.floor(Math.random() * items.length);

@@ -43,6 +43,7 @@ export default class TradeManager {
 		Utility.sendDebugMessage('Existing players:');
 		for (let i = 0; i < gamePlayers.length; i++) {
 			let playerName = gamePlayers[i].displayName.split(": ")[0];
+			if (playerName === 'Time') continue;
 			Utility.sendDebugMessage("Player = " + playerName);
 			let player = players.find(p => p.name === playerName);
 			if (player === undefined) {
@@ -93,6 +94,7 @@ export default class TradeManager {
 			this.tradeObjectiveRef = world.scoreboard.getObjective(this.tradeObjectiveId);
 			if (!this.tradeObjectiveRef) this.tradeObjectiveRef = world.scoreboard.addObjective(this.tradeObjectiveId, this.tradeObjectiveDisplayName);
 		}
+		this.tradeObjectiveRef.addScore('Time', Utility.endOfDay - world.getTimeOfDay());
 		world.scoreboard.setObjectiveAtDisplaySlot(DisplaySlotId.Sidebar, {
 			objective: this.tradeObjectiveRef,
 		});
@@ -163,7 +165,7 @@ export default class TradeManager {
 				case 0:
 					// Start game
 					let player_record = this.addPlayer(player);
-					player.sendMessage("Your current challenge item is: " + player_record.currentObjectiveItem);
+					player.sendMessage("Your current challenge item is: " + Utility.removeNamespace(player_record.currentObjectiveItem));
 					player.sendMessage("Collect this item before the end of the day to win a prize!");
 					break;
 				default:
@@ -190,7 +192,7 @@ export default class TradeManager {
 						break;
 					}
 					player_record.player.sendMessage("Your current challenge item is: "
-						+ player_record.currentObjectiveItem
+						+ Utility.removeNamespace(player_record.currentObjectiveItem)
 						+ "\nCollect this item before the end of the day to win a prize!");
 					break;
 				case 1:
@@ -203,13 +205,18 @@ export default class TradeManager {
 					player_record.assignObjective();
 					player_record.addScore(this.tradeObjectiveRef as ScoreboardObjective);
 					player_record.player.sendMessage("Your new item is: "
-						+ player_record.currentObjectiveItem
+						+ Utility.removeNamespace(player_record.currentObjectiveItem)
 						+ "\nCollect this item before the end of the day to win a prize!");
 					break;
 				case 2:
 					// List all player items
 					let playerItems = this.tradeObjectiveRef?.getScores();
-					let playerItemsString = playerItems?.map(score => "   " + score.participant.displayName + "").join("\n");
+					let playerItemsString = playerItems?.map((score) => {
+						if (score.participant.displayName === "Time") {
+							return "";
+						} 
+						return "   " + score.participant.displayName + "";
+					}).filter(str => str && str != "").join("\n");
 					world.sendMessage("Player items:\n" + playerItemsString);
 					break;
 				case 3:
@@ -234,7 +241,7 @@ export default class TradeManager {
 			this.handleStartGameForm(player, tradeUI);
 		}
 		else {
-			tradeUI.button(player_record.succeeded ? "You have completed your trade of the day!" : "Current item: " + player_record.currentObjectiveItem);
+			tradeUI.button(player_record.succeeded ? "You have completed your trade of the day!" : "Current item: " + Utility.removeNamespace(player_record.currentObjectiveItem));
 			tradeUI.button("Re-roll for new item");
 			tradeUI.button("List all player items");
 			tradeUI.button("Leave game");
@@ -286,7 +293,7 @@ export default class TradeManager {
 					player_record.assignObjective();
 					player_record.addScore(this.tradeObjectiveRef as ScoreboardObjective);
 					player_record.player.sendMessage("Your new item is: "
-						+ player_record.currentObjectiveItem
+						+ Utility.removeNamespace(player_record.currentObjectiveItem)
 						+ "\nCollect this item before the end of the day to win a prize!");
 					break;
 				default:
@@ -323,7 +330,7 @@ export default class TradeManager {
 			player_record.assignObjective();
 			player_record.addScore(this.tradeObjectiveRef as ScoreboardObjective);
 			player_record.player.sendMessage("Your new item is: "
-				+ player_record.currentObjectiveItem
+				+ Utility.removeNamespace(player_record.currentObjectiveItem)
 				+ "\nCollect this item before the end of the day to win a prize!");
 		});
 		this.updateScores();
@@ -334,13 +341,18 @@ export default class TradeManager {
 	}
 
 	updateScores() {
-		this.players.forEach(player_record => {
-			player_record.updateScore(this.tradeObjectiveRef as ScoreboardObjective);
-		});		
+		// this.players.forEach(player_record => {
+		// 	player_record.updateScore(this.tradeObjectiveRef as ScoreboardObjective);
+		// });		
+		if (!this.tradeObjectiveRef) {
+			Utility.sendDebugMessage('Trade objective not found');
+			return;
+		}
 		let tick = world.getTimeOfDay();
+		this.tradeObjectiveRef.setScore('Time', Utility.endOfDay - tick);
 		world.sendMessage("Updating scores - " + tick.toString());
 		let day = world.getDay();
-		if (tick >= Utility.endOfDay - 1000 && !this.endOfDayRun) {// || (day > 0 && tick <= 500)) {
+		if (tick >= Utility.endOfDay - 1500 && !this.endOfDayRun) {
 			this.endOfDayRun = system.runInterval(this.endOfDay.bind(this), Utility.endOfDay - tick);
 		}
 	}
